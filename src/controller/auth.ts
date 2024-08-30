@@ -2,6 +2,7 @@ import {Request,Response} from 'express'
 import {signUpData} from '../utils/zod'
 import bcrypt from 'bcryptjs'
 import { UserModel } from '../model/user.model'
+
 export const Register=async (req:Request,res:Response)=>{
     try {
         const payload={

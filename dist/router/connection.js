@@ -7,4 +7,5 @@ const express_1 = __importDefault(require("express"));
 const connection_1 = require("../controller/connection");
 const router = express_1.default.Router();
 router.post('/follow', connection_1.follow);
+router.get('/connect', connection_1.getConnectionChain);
 exports.default = router;
