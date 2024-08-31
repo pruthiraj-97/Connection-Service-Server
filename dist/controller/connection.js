@@ -56,7 +56,11 @@ const follow = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        return res.status(500).json({ status: 500, data: null, error: { message: "something went wrong" } });
+        return res.status(500).json({
+            status: 500,
+            data: null,
+            error: { message: "something went wrong" }
+        });
     }
 });
 exports.follow = follow;

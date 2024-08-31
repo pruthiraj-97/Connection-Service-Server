@@ -45,7 +45,12 @@ export const follow= async (req:Request,res:Response)=>{
         })
     }
     catch (error) {
-        return res.status(500).json({status:500,data:null,error:{message:"something went wrong"}})
+        return res.status(500).json(
+            {
+            status:500,
+            data:null,
+            error:{message:"something went wrong"}
+        })
     }
 }
 
@@ -91,8 +96,7 @@ export const ConnectionChain = async (req: Request, res: Response) => {
             }
 
             const user = await UserModel.findById(currentId).lean();
-            const friends: Types.ObjectId[] = (user?.friends as Types.ObjectId[]) || [];
-
+            const friends=user?.friends || []
             for (const newFriend of friends) {
                 if (!isVisited.has(newFriend.toString())) {
                     isVisited.add(newFriend.toString());
