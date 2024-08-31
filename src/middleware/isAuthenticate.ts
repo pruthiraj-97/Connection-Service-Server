@@ -48,7 +48,6 @@ export const getUser=async (req:Request)=>{
         if(typeof payload === 'string'){
             throw new Error('Invalid token')
         }
-        console.log(payload)
         return payload
     } catch (error) {
         console.error("Error fetching user details:", error);
