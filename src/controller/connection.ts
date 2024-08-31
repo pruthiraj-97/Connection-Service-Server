@@ -1,7 +1,7 @@
-import { Request,Response } from "express"
-import { Types } from "mongoose"
-import {UserModel} from "../model/user.model"
-import { getUser } from '../middleware/isAuthenticate'
+import { Request, Response } from "express";
+import { Types } from "mongoose";
+import { UserModel } from "../model/user.model";
+import { getUser } from "../middleware/isAuthenticate";
 export const follow= async (req:Request,res:Response)=>{
     try {
         let payload=await getUser(req)
@@ -49,13 +49,12 @@ export const follow= async (req:Request,res:Response)=>{
     }
 }
 
-
-export const getConnectionChain = async (req: Request, res: Response) => {
+export const ConnectionChain = async (req: Request, res: Response) => {
     try {
-        const sourceId = req.query.sourceId as string;
-        const destinationId = req.query.DestinationId as string;
+        const source = req.query.source as string;
+        const destination = req.query.destination as string;
 
-        if (!sourceId || !destinationId) {
+        if (!source || !destination) {
             return res.status(400).json({
                 status: 400,
                 data: null,
@@ -65,64 +64,62 @@ export const getConnectionChain = async (req: Request, res: Response) => {
             });
         }
 
-        if (typeof sourceId !== "string" || typeof destinationId !== "string") {
+        const sourceUser = await UserModel.findOne({ name: source}).lean();
+        const destinationUser = await UserModel.findOne({ name: destination}).lean();
+
+        if (!sourceUser || !destinationUser) {
             return res.status(400).json({
                 status: 400,
                 data: null,
                 error: {
-                    message: "sourceId and destinationId must be strings."
+                    message: "User not found."
                 }
             });
         }
-        let paths: Array<Array<Types.ObjectId>> = [];
-        let isVisited = new Set<Types.ObjectId>();
-        let tempPath: Array<Types.ObjectId> = [];
 
-        async function DFS(currentId: Types.ObjectId, destinationId: Types.ObjectId) {
-            if (currentId.toString() === destinationId.toString()) {
+        const sourceObjectId =sourceUser._id;
+        const destinationObjectId = destinationUser._id;
+
+        let paths: Array<Array<string>> = [];
+        let isVisited = new Set<string>();
+        let tempPath: Array<string> = [];
+
+        async function DFS(currentId:string, destinationId:string) {
+            if (currentId==destinationId) {
                 paths.push([...tempPath]);
                 return;
             }
 
-            const user = await UserModel.findOne({ _id: currentId }).lean();
-            const friends = user?.friends;
+            const user = await UserModel.findById(currentId).lean();
+            const friends: Types.ObjectId[] = (user?.friends as Types.ObjectId[]) || [];
 
-            if (friends) {
-                for (const newFriend of friends) {
-                    if (!isVisited.has(newFriend)) {
-                        isVisited.add(newFriend);
-                        tempPath.push(newFriend);
-                        await DFS(newFriend, destinationId);
-                        tempPath.pop();
-                        isVisited.delete(newFriend);
-                    }
+            for (const newFriend of friends) {
+                if (!isVisited.has(newFriend.toString())) {
+                    isVisited.add(newFriend.toString());
+                    tempPath.push(newFriend.toString());
+                    await DFS(newFriend.toString(), destinationId);
+                    tempPath.pop();
+                    isVisited.delete(newFriend.toString());
                 }
             }
         }
 
-        const sourceObjectId = new Types.ObjectId(sourceId);
-        const destinationObjectId = new Types.ObjectId(destinationId);
-
-        tempPath.push(sourceObjectId);
-        isVisited.add(sourceObjectId);
-
-        await DFS(sourceObjectId, destinationObjectId);
-        const ResultPath:Array<unknown>=[]
-        
+        tempPath.push(sourceObjectId.toString());
+        isVisited.add(sourceObjectId.toString());
+        let ResultPath:Array<Array<unknown>> = [];
+        await DFS(sourceObjectId.toString(), destinationObjectId.toString());
         for(const path of paths){
-            let newPath:Array<unknown>=[]
-            for(const node of path){
-                const user=await UserModel.findById(node)
+            let newPath:Array<unknown> = [];
+            for(const userId of path){
+                const user = await UserModel.findById(userId).lean();
                 newPath.push(user)
             }
             ResultPath.push(newPath)
         }
-
+        console.log(ResultPath)
         return res.status(200).json({
             status: 200,
-            data: {
-                ResultPath
-            },
+            data: ResultPath,
             error: null
         });
     } catch (error) {
@@ -134,17 +131,19 @@ export const getConnectionChain = async (req: Request, res: Response) => {
             }
         });
     }
-}
+};
+
+
 
 export const getAllUsers= async (req:Request,res:Response)=>{
        try {
         const payload = await getUser(req)
+        console.log(payload)
           if(!payload){
             res.status(400).json({status:400,data:null,error:{message:"Please login first"}})
           }
-          const Users=await UserModel.find({
-            _id:{$ne:payload.id}
-          })
+          const Users=await UserModel.find({_id:{$ne:payload.id}})
+          console.log(Users)
           res.status(200).json({status:200,data:Users,error:null})
        } catch (error) {
          res.status(500).json({

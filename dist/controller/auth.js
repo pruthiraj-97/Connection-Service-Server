@@ -113,11 +113,11 @@ const Login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const token = jsonwebtoken_1.default.sign(userDetains, process.env.JWT_SECRET, {
             expiresIn: '1d'
         });
-        res.cookie("token", token, { httpOnly: true });
         return res.status(200).json({
             status: 200,
             data: {
-                user: isUserExist
+                user: isUserExist,
+                token: token
             },
             error: null
         });

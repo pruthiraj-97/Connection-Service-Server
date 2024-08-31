@@ -25,6 +25,6 @@ const userSchema=new mongoose.Schema<IUser>({
             ref:'User'
         }
     ]
-})
+},{timestamps:true})
 
 export const UserModel=mongoose.model('User',userSchema)

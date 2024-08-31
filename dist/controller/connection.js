@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllUsers = exports.getConnectionChain = exports.follow = void 0;
+exports.getAllUsers = exports.ConnectionChain = exports.follow = void 0;
 const mongoose_1 = require("mongoose");
 const user_model_1 = require("../model/user.model");
 const isAuthenticate_1 = require("../middleware/isAuthenticate");
@@ -60,11 +60,11 @@ const follow = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.follow = follow;
-const getConnectionChain = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const ConnectionChain = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const sourceId = req.query.sourceId;
-        const destinationId = req.query.DestinationId;
-        if (!sourceId || !destinationId) {
+        const source = req.query.source;
+        const destination = req.query.destination;
+        if (!source || !destination) {
             return res.status(400).json({
                 status: 400,
                 data: null,
@@ -73,58 +73,57 @@ const getConnectionChain = (req, res) => __awaiter(void 0, void 0, void 0, funct
                 }
             });
         }
-        if (typeof sourceId !== "string" || typeof destinationId !== "string") {
+        const sourceUser = yield user_model_1.UserModel.findOne({ name: source }).lean();
+        const destinationUser = yield user_model_1.UserModel.findOne({ name: destination }).lean();
+        if (!sourceUser || !destinationUser) {
             return res.status(400).json({
                 status: 400,
                 data: null,
                 error: {
-                    message: "sourceId and destinationId must be strings."
+                    message: "User not found."
                 }
             });
         }
+        const sourceObjectId = sourceUser._id;
+        const destinationObjectId = destinationUser._id;
         let paths = [];
         let isVisited = new Set();
         let tempPath = [];
         function DFS(currentId, destinationId) {
             return __awaiter(this, void 0, void 0, function* () {
-                if (currentId.toString() === destinationId.toString()) {
+                if (currentId == destinationId) {
                     paths.push([...tempPath]);
                     return;
                 }
-                const user = yield user_model_1.UserModel.findOne({ _id: currentId }).lean();
-                const friends = user === null || user === void 0 ? void 0 : user.friends;
-                if (friends) {
-                    for (const newFriend of friends) {
-                        if (!isVisited.has(newFriend)) {
-                            isVisited.add(newFriend);
-                            tempPath.push(newFriend);
-                            yield DFS(newFriend, destinationId);
-                            tempPath.pop();
-                            isVisited.delete(newFriend);
-                        }
+                const user = yield user_model_1.UserModel.findById(currentId).lean();
+                const friends = (user === null || user === void 0 ? void 0 : user.friends) || [];
+                for (const newFriend of friends) {
+                    if (!isVisited.has(newFriend.toString())) {
+                        isVisited.add(newFriend.toString());
+                        tempPath.push(newFriend.toString());
+                        yield DFS(newFriend.toString(), destinationId);
+                        tempPath.pop();
+                        isVisited.delete(newFriend.toString());
                     }
                 }
             });
         }
-        const sourceObjectId = new mongoose_1.Types.ObjectId(sourceId);
-        const destinationObjectId = new mongoose_1.Types.ObjectId(destinationId);
-        tempPath.push(sourceObjectId);
-        isVisited.add(sourceObjectId);
-        yield DFS(sourceObjectId, destinationObjectId);
-        const ResultPath = [];
+        tempPath.push(sourceObjectId.toString());
+        isVisited.add(sourceObjectId.toString());
+        let ResultPath = [];
+        yield DFS(sourceObjectId.toString(), destinationObjectId.toString());
         for (const path of paths) {
             let newPath = [];
-            for (const node of path) {
-                const user = yield user_model_1.UserModel.findById(node);
+            for (const userId of path) {
+                const user = yield user_model_1.UserModel.findById(userId).lean();
                 newPath.push(user);
             }
             ResultPath.push(newPath);
         }
+        console.log(ResultPath);
         return res.status(200).json({
             status: 200,
-            data: {
-                ResultPath
-            },
+            data: ResultPath,
             error: null
         });
     }
@@ -138,16 +137,16 @@ const getConnectionChain = (req, res) => __awaiter(void 0, void 0, void 0, funct
         });
     }
 });
-exports.getConnectionChain = getConnectionChain;
+exports.ConnectionChain = ConnectionChain;
 const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const payload = yield (0, isAuthenticate_1.getUser)(req);
+        console.log(payload);
         if (!payload) {
             res.status(400).json({ status: 400, data: null, error: { message: "Please login first" } });
         }
-        const Users = yield user_model_1.UserModel.find({
-            _id: { $ne: payload.id }
-        });
+        const Users = yield user_model_1.UserModel.find({ _id: { $ne: payload.id } });
+        console.log(Users);
         res.status(200).json({ status: 200, data: Users, error: null });
     }
     catch (error) {

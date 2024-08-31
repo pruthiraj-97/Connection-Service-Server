@@ -16,10 +16,10 @@ exports.getUser = exports.isAuthenticate = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const isAuthenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const token = req.cookies.token;
+        const token = req.headers['x-access-token'];
         console.log("token is ", token);
-        if (!token) {
-            res.status(401).json({
+        if (!token || typeof token !== 'string') {
+            return res.status(401).json({
                 status: 401,
                 data: null,
                 error: {
@@ -42,7 +42,7 @@ const isAuthenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         next();
     }
     catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             status: 500,
             data: null,
             error: {
@@ -54,7 +54,7 @@ const isAuthenticate = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
 exports.isAuthenticate = isAuthenticate;
 const getUser = (req) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const token = req.cookies.token;
+        const token = req.headers['x-access-token'];
         console.log(token);
         if (!token || typeof token !== 'string') {
             throw new Error('Invalid token');
@@ -63,7 +63,6 @@ const getUser = (req) => __awaiter(void 0, void 0, void 0, function* () {
         if (typeof payload === 'string') {
             throw new Error('Invalid token');
         }
-        console.log(payload);
         return payload;
     }
     catch (error) {

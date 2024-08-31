@@ -2,10 +2,10 @@ import { Request,Response,NextFunction } from 'express'
 import JWT  from 'jsonwebtoken'
 export const isAuthenticate= async (req:Request,res:Response,next:NextFunction)=>{
     try {
-        const token=req.cookies.token
+        const token=req.headers['x-access-token']
         console.log("token is ",token)
-        if(!token){
-            res.status(401).json({
+        if(!token||typeof token!=='string'){
+            return res.status(401).json({
                 status:401,
                 data:null,
                 error:{
@@ -27,7 +27,7 @@ export const isAuthenticate= async (req:Request,res:Response,next:NextFunction)=
         })
         next()
     } catch (error) {
-        res.status(500).json({
+       return res.status(500).json({
             status:500,
             data:null,
             error:{
@@ -39,7 +39,7 @@ export const isAuthenticate= async (req:Request,res:Response,next:NextFunction)=
 
 export const getUser=async (req:Request)=>{
     try {
-        const token = req.cookies.token;
+        const token=req.headers['x-access-token']
         console.log(token)
         if(!token||typeof token !== 'string'){
             throw new Error('Invalid token')

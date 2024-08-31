@@ -20,7 +20,7 @@ const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
         console.log("DB connected successfully");
     }
     catch (error) {
-        console.log("error in db connection");
+        console.log("error in db connection" + error);
     }
 });
 exports.connectDB = connectDB;
