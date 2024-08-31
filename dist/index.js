@@ -8,10 +8,12 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const database_1 = require("./config/database");
 const auth_1 = __importDefault(require("./router/auth"));
 const connection_1 = __importDefault(require("./router/connection"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 dotenv_1.default.config();
 const PORT = process.env.PORT;
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
+app.use((0, cookie_parser_1.default)());
 app.get('/', (req, res) => {
     res.status(200).json({
         message: "server is running"

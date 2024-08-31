@@ -9,13 +9,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getConnectionChain = exports.follow = void 0;
+exports.getAllUsers = exports.getConnectionChain = exports.follow = void 0;
 const mongoose_1 = require("mongoose");
 const user_model_1 = require("../model/user.model");
+const isAuthenticate_1 = require("../middleware/isAuthenticate");
 const follow = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        let userId = req.query.userId;
-        let followerId = req.query.followerId;
+        let payload = yield (0, isAuthenticate_1.getUser)(req);
+        let userId = req.params.userId;
+        let followerId = payload.id;
         if (!userId || !followerId) {
             return res.status(400).json({
                 status: 400,
@@ -137,3 +139,25 @@ const getConnectionChain = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.getConnectionChain = getConnectionChain;
+const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const payload = yield (0, isAuthenticate_1.getUser)(req);
+        if (!payload) {
+            res.status(400).json({ status: 400, data: null, error: { message: "Please login first" } });
+        }
+        const Users = yield user_model_1.UserModel.find({
+            _id: { $ne: payload.id }
+        });
+        res.status(200).json({ status: 200, data: Users, error: null });
+    }
+    catch (error) {
+        res.status(500).json({
+            status: 500,
+            data: null,
+            error: {
+                message: "Something went wrong"
+            }
+        });
+    }
+});
+exports.getAllUsers = getAllUsers;

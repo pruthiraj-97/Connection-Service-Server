@@ -1,11 +1,12 @@
 import { Request,Response } from "express"
 import { Types } from "mongoose"
 import {UserModel} from "../model/user.model"
-import { Type } from "typescript"
+import { getUser } from '../middleware/isAuthenticate'
 export const follow= async (req:Request,res:Response)=>{
     try {
-        let userId=req.query.userId
-        let followerId=req.query.followerId
+        let payload=await getUser(req)
+        let userId=req.params.userId
+        let followerId=payload.id
         if(!userId||!followerId){
             return res.status(400).json({
                 status:400,
@@ -135,3 +136,23 @@ export const getConnectionChain = async (req: Request, res: Response) => {
     }
 }
 
+export const getAllUsers= async (req:Request,res:Response)=>{
+       try {
+        const payload = await getUser(req)
+          if(!payload){
+            res.status(400).json({status:400,data:null,error:{message:"Please login first"}})
+          }
+          const Users=await UserModel.find({
+            _id:{$ne:payload.id}
+          })
+          res.status(200).json({status:200,data:Users,error:null})
+       } catch (error) {
+         res.status(500).json({
+            status:500,
+            data:null,
+            error:{
+                message:"Something went wrong"
+            }
+         })
+       }
+}
